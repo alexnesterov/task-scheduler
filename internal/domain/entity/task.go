@@ -3,7 +3,12 @@ package entity
 
 import "errors"
 
-var ErrNotFound = errors.New("not found")
+var (
+	ErrNotFound   = errors.New("not found")
+	ErrCreateTask = errors.New("create task")
+	ErrUpdateTask = errors.New("update task")
+	ErrDoneTask   = errors.New("done task")
+)
 
 type Task struct {
 	ID      string `json:"id"`

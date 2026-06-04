@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -60,14 +61,21 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var req port.CreateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("invalid request body: %v", err)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
 		return
 	}
 
 	id, err := h.TaskUseCase.CreateTask(req)
-	if err != nil {
+	if errors.Is(err, entity.ErrCreateTask) {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("internal error: %v", err)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal error"})
 		return
 	}
 
@@ -80,8 +88,9 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	tasks, err := h.TaskUseCase.ListTasks()
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("internal error: %v", err)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal error"})
 		return
 	}
 
@@ -101,8 +110,9 @@ func (h *TaskHandler) ReadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("internal error: %v", err)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal error"})
 		return
 	}
 
@@ -116,13 +126,26 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	var req port.UpdateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("invalid request body: %v", err)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
 		return
 	}
 
-	if err := h.TaskUseCase.UpdateTask(req); err != nil {
+	err := h.TaskUseCase.UpdateTask(req)
+	if errors.Is(err, entity.ErrNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	if errors.Is(err, entity.ErrUpdateTask) {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("internal error: %v", err)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal error"})
 		return
 	}
 
@@ -135,9 +158,16 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	id := r.URL.Query().Get("id")
 
-	if err := h.TaskUseCase.DeleteTask(id); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	err := h.TaskUseCase.DeleteTask(id)
+	if errors.Is(err, entity.ErrNotFound) {
+		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("internal error: %v", err)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal error"})
 		return
 	}
 
@@ -150,9 +180,21 @@ func (h *TaskHandler) DoneTask(w http.ResponseWriter, r *http.Request) {
 
 	id := r.URL.Query().Get("id")
 
-	if err := h.TaskUseCase.DoneTask(id); err != nil {
+	err := h.TaskUseCase.DoneTask(id)
+	if errors.Is(err, entity.ErrNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	if errors.Is(err, entity.ErrDoneTask) {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("internal error: %v", err)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "internal error"})
 		return
 	}
 

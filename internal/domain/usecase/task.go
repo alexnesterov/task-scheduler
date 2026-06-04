@@ -17,7 +17,7 @@ type TaskUseCase struct {
 
 func (uc *TaskUseCase) CreateTask(req port.CreateTaskRequest) (string, error) {
 	if req.Title == "" {
-		return "", fmt.Errorf("title is required")
+		return "", fmt.Errorf("%w: title is required", entity.ErrCreateTask)
 	}
 
 	task := &entity.Task{
@@ -28,7 +28,7 @@ func (uc *TaskUseCase) CreateTask(req port.CreateTaskRequest) (string, error) {
 	}
 
 	if err := uc.checkDate(task); err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: %w", entity.ErrCreateTask, err)
 	}
 
 	id, err := uc.TaskRepo.CreateTask(task)
@@ -49,7 +49,7 @@ func (uc *TaskUseCase) ReadTask(id string) (*entity.Task, error) {
 
 func (uc *TaskUseCase) UpdateTask(req port.UpdateTaskRequest) error {
 	if req.Title == "" {
-		return fmt.Errorf("title is required")
+		return fmt.Errorf("%w: title is required", entity.ErrUpdateTask)
 	}
 
 	task := &entity.Task{
@@ -61,7 +61,7 @@ func (uc *TaskUseCase) UpdateTask(req port.UpdateTaskRequest) error {
 	}
 
 	if err := uc.checkDate(task); err != nil {
-		return err
+		return fmt.Errorf("%w: %w", entity.ErrUpdateTask, err)
 	}
 
 	return uc.TaskRepo.UpdateTask(task)
@@ -85,7 +85,7 @@ func (uc *TaskUseCase) DoneTask(id string) error {
 
 	next, err := uc.NextDate(now, task.Date, task.Repeat)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %w", entity.ErrDoneTask, err)
 	}
 
 	task.Date = next
@@ -100,7 +100,7 @@ func (uc *TaskUseCase) NextDate(now time.Time, dstart, repeat string) (string, e
 
 	date, err := time.Parse("20060102", dstart)
 	if err != nil {
-		return "", fmt.Errorf("parse date: %v", err)
+		return "", fmt.Errorf("parse date: %w", err)
 	}
 
 	repeated := strings.Split(repeat, " ")
@@ -113,7 +113,7 @@ func (uc *TaskUseCase) NextDate(now time.Time, dstart, repeat string) (string, e
 
 		interval, err := strconv.Atoi(repeated[1])
 		if err != nil {
-			return "", fmt.Errorf("parse interval: %v", err)
+			return "", fmt.Errorf("parse interval: %w", err)
 		}
 
 		if interval <= 0 {
