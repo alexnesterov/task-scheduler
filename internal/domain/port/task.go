@@ -30,12 +30,12 @@ type UpdateTaskRequest struct {
 	Repeat  string `json:"repeat"`
 }
 
-type TaskUseCase interface {
+type TaskService interface {
+	NextDate(now time.Time, dstart, repeat string) (string, error)
 	CreateTask(req CreateTaskRequest) (string, error)
 	ListTasks() ([]*entity.Task, error)
 	ReadTask(id string) (*entity.Task, error)
 	UpdateTask(req UpdateTaskRequest) error
 	DeleteTask(id string) error
 	DoneTask(id string) error
-	NextDate(now time.Time, dstart, repeat string) (string, error)
 }

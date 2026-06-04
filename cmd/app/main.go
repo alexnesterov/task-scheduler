@@ -23,7 +23,7 @@ func main() {
 	router := http.NewServeMux()
 
 	taskRepository := sqlite.NewTaskRepository(db.DB)
-	taskService := &usecase.TaskUseCase{
+	taskService := &usecase.TaskService{
 		TaskRepo: taskRepository,
 	}
 

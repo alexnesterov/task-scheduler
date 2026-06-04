@@ -14,7 +14,7 @@ import (
 )
 
 type TaskHandler struct {
-	TaskUseCase port.TaskUseCase
+	TaskUseCase port.TaskService
 }
 
 func (h *TaskHandler) NextDate(w http.ResponseWriter, r *http.Request) {
