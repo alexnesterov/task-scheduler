@@ -1,0 +1,14 @@
+# Binaries
+/task-scheduler
+*.exe
+
+# Database
+*.db
+
+# Environment
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
