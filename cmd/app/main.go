@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/alexnesterov/task-scheduler/internal/adapter/httpapi"
@@ -31,7 +32,15 @@ func main() {
 		TaskUseCase: taskService,
 	}
 
-	router.HandleFunc("/", http.FileServer(http.Dir("web")).ServeHTTP)
+	webDir := os.Getenv("WEB_DIR")
+	if webDir == "" {
+		webDir = "web"
+	}
+	if _, err := os.Stat(webDir); err != nil {
+		log.Fatalf("web dir %q: %v", webDir, err)
+	}
+
+	router.HandleFunc("/", http.FileServer(http.Dir(webDir)).ServeHTTP)
 	router.HandleFunc("GET /api/nextdate", handler.NextDate)
 	router.HandleFunc("POST /api/task", handler.CreateTask)
 	router.HandleFunc("GET /api/tasks", handler.ListTasks)
@@ -40,7 +49,7 @@ func main() {
 	router.HandleFunc("DELETE /api/task", handler.DeleteTask)
 	router.HandleFunc("POST /api/task/done", handler.DoneTask)
 
-	server := http.Server{
+	server := &http.Server{
 		Addr:         ":" + PORT,
 		Handler:      router,
 		ReadTimeout:  5 * time.Second,
