@@ -4,18 +4,25 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/alexnesterov/task-scheduler/internal/adapter/httpapi"
+	"github.com/alexnesterov/task-scheduler/internal/config"
 	"github.com/alexnesterov/task-scheduler/internal/db"
 	"github.com/alexnesterov/task-scheduler/internal/domain/usecase"
 	"github.com/alexnesterov/task-scheduler/internal/infrastructure/sqlite"
 )
 
-const PORT = "7540"
-
 func main() {
-	err := db.Init("scheduler.db")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	if _, err := os.Stat(cfg.App.WebDir); err != nil {
+		log.Fatalf("web dir %q: %v", cfg.App.WebDir, err)
+	}
+
+	err = db.Init(cfg.DB.File)
 	if err != nil {
 		log.Fatalf("init db: %v", err)
 	}
@@ -32,15 +39,7 @@ func main() {
 		TaskUseCase: taskService,
 	}
 
-	webDir := os.Getenv("WEB_DIR")
-	if webDir == "" {
-		webDir = "web"
-	}
-	if _, err := os.Stat(webDir); err != nil {
-		log.Fatalf("web dir %q: %v", webDir, err)
-	}
-
-	router.HandleFunc("/", http.FileServer(http.Dir(webDir)).ServeHTTP)
+	router.HandleFunc("/", http.FileServer(http.Dir(cfg.App.WebDir)).ServeHTTP)
 	router.HandleFunc("GET /api/nextdate", handler.NextDate)
 	router.HandleFunc("POST /api/task", handler.CreateTask)
 	router.HandleFunc("GET /api/tasks", handler.ListTasks)
@@ -50,14 +49,14 @@ func main() {
 	router.HandleFunc("POST /api/task/done", handler.DoneTask)
 
 	server := &http.Server{
-		Addr:         ":" + PORT,
+		Addr:         ":" + cfg.HTTP.Port,
 		Handler:      router,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  15 * time.Second,
+		ReadTimeout:  cfg.HTTP.ReadTimeout,
+		WriteTimeout: cfg.HTTP.WriteTimeout,
+		IdleTimeout:  cfg.HTTP.IdleTimeout,
 	}
 
-	log.Printf("Server is running on port %s", PORT)
+	log.Printf("Server is running on port %s", cfg.HTTP.Port)
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
