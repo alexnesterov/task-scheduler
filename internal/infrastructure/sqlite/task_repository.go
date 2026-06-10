@@ -18,7 +18,7 @@ func NewTaskRepository(db *sql.DB) *TaskRepository {
 	}
 }
 
-func (r *TaskRepository) CreateTask(task *entity.Task) (int64, error) {
+func (r *TaskRepository) Create(task *entity.Task) (int64, error) {
 	var id int64
 
 	query := `INSERT INTO scheduler (date, title, comment, repeat) VALUES ($1, $2, $3, $4)`
@@ -31,7 +31,25 @@ func (r *TaskRepository) CreateTask(task *entity.Task) (int64, error) {
 	return id, err
 }
 
-func (r *TaskRepository) ListTasks(limit int) ([]*entity.Task, error) {
+func (r *TaskRepository) Read(id string) (*entity.Task, error) {
+	task := &entity.Task{}
+
+	query := `SELECT * FROM scheduler WHERE id = $1`
+
+	row := r.db.QueryRow(query, id)
+
+	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, entity.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+func (r *TaskRepository) List(limit int) ([]*entity.Task, error) {
 	tasks := []*entity.Task{}
 
 	query := `SELECT * FROM scheduler ORDER BY date ASC`
@@ -65,25 +83,7 @@ func (r *TaskRepository) ListTasks(limit int) ([]*entity.Task, error) {
 	return tasks, nil
 }
 
-func (r *TaskRepository) ReadTask(id string) (*entity.Task, error) {
-	task := &entity.Task{}
-
-	query := `SELECT * FROM scheduler WHERE id = $1`
-
-	row := r.db.QueryRow(query, id)
-
-	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, entity.ErrNotFound
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return task, nil
-}
-
-func (r *TaskRepository) UpdateTask(task *entity.Task) error {
+func (r *TaskRepository) Update(task *entity.Task) error {
 	query := `
 		UPDATE scheduler
 		SET date = $1, title = $2, comment = $3, repeat = $4
@@ -106,7 +106,7 @@ func (r *TaskRepository) UpdateTask(task *entity.Task) error {
 	return nil
 }
 
-func (r *TaskRepository) DeleteTask(id string) error {
+func (r *TaskRepository) Delete(id string) error {
 	query := `DELETE FROM scheduler WHERE id = $1`
 
 	res, err := r.db.Exec(query, id)

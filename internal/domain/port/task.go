@@ -8,11 +8,11 @@ import (
 )
 
 type TaskRepository interface {
-	CreateTask(task *entity.Task) (int64, error)
-	ListTasks(limit int) ([]*entity.Task, error)
-	ReadTask(id string) (*entity.Task, error)
-	UpdateTask(task *entity.Task) error
-	DeleteTask(id string) error
+	Create(task *entity.Task) (int64, error)
+	Read(id string) (*entity.Task, error)
+	List(limit int) ([]*entity.Task, error)
+	Update(task *entity.Task) error
+	Delete(id string) error
 }
 
 type CreateTaskRequest struct {

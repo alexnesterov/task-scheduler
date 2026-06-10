@@ -86,7 +86,7 @@ func (s *TaskService) CreateTask(req port.CreateTaskRequest) (string, error) {
 		return "", fmt.Errorf("%w: %w", entity.ErrCreateTask, err)
 	}
 
-	id, err := s.TaskRepo.CreateTask(task)
+	id, err := s.TaskRepo.Create(task)
 	if err != nil {
 		return "", err
 	}
@@ -95,11 +95,11 @@ func (s *TaskService) CreateTask(req port.CreateTaskRequest) (string, error) {
 }
 
 func (s *TaskService) ListTasks() ([]*entity.Task, error) {
-	return s.TaskRepo.ListTasks(50)
+	return s.TaskRepo.List(50)
 }
 
 func (s *TaskService) ReadTask(id string) (*entity.Task, error) {
-	return s.TaskRepo.ReadTask(id)
+	return s.TaskRepo.Read(id)
 }
 
 func (s *TaskService) UpdateTask(req port.UpdateTaskRequest) error {
@@ -119,21 +119,21 @@ func (s *TaskService) UpdateTask(req port.UpdateTaskRequest) error {
 		return fmt.Errorf("%w: %w", entity.ErrUpdateTask, err)
 	}
 
-	return s.TaskRepo.UpdateTask(task)
+	return s.TaskRepo.Update(task)
 }
 
 func (s *TaskService) DeleteTask(id string) error {
-	return s.TaskRepo.DeleteTask(id)
+	return s.TaskRepo.Delete(id)
 }
 
 func (s *TaskService) DoneTask(id string) error {
-	task, err := s.TaskRepo.ReadTask(id)
+	task, err := s.TaskRepo.Read(id)
 	if err != nil {
 		return err
 	}
 
 	if task.Repeat == "" {
-		return s.TaskRepo.DeleteTask(id)
+		return s.TaskRepo.Delete(id)
 	}
 
 	now := time.Now()
@@ -145,7 +145,7 @@ func (s *TaskService) DoneTask(id string) error {
 
 	task.Date = next
 
-	return s.TaskRepo.UpdateTask(task)
+	return s.TaskRepo.Update(task)
 }
 
 func (s *TaskService) checkDate(task *entity.Task) error {
