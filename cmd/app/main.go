@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/alexnesterov/task-scheduler/internal/adapter/httpapi"
 	"github.com/alexnesterov/task-scheduler/internal/config"
@@ -16,10 +15,6 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
-	}
-
-	if _, err := os.Stat(cfg.App.WebDir); err != nil {
-		log.Fatalf("web dir %q: %v", cfg.App.WebDir, err)
 	}
 
 	err = db.Init(cfg.DB.File)
@@ -39,7 +34,6 @@ func main() {
 		TaskUseCase: taskService,
 	}
 
-	router.HandleFunc("/", http.FileServer(http.Dir(cfg.App.WebDir)).ServeHTTP)
 	router.HandleFunc("GET /api/nextdate", handler.NextDate)
 	router.HandleFunc("POST /api/task", handler.CreateTask)
 	router.HandleFunc("GET /api/tasks", handler.ListTasks)

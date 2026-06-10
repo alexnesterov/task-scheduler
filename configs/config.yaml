@@ -1,5 +1,4 @@
 app:
-  web_dir: web
 
 http:
   port: 7540
